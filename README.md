@@ -24,7 +24,7 @@ GitOps simplifies the propagation of infrastructure and application configuratio
 
 - Git
 - Docker
-- Minikube
+- Minikube `brew install minikube`
 - kubectl
 - argocd
 - kustomize
@@ -32,3 +32,15 @@ GitOps simplifies the propagation of infrastructure and application configuratio
 - yq
 - jq
 - watch 
+
+## Minikube
+### MacOS
+
+```
+minikube start --memory=8192 --cpus=3 --kubernetes-version=v1.35.0 --driver=docker -p gitops
+```
+
+to make docker the default driver:
+```
+minikube config set driver docker
+```
