@@ -89,7 +89,11 @@ You can view the list of minikube maintainers at: https://github.com/kubernetes/
 Install argocd
 ```
 kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl apply --server-side --force-conflicts -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# or 
+cd cluster
+kubectl apply --server-side --force-conflicts -k .
 ```
 
 More info at https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/
