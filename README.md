@@ -97,3 +97,16 @@ kubectl apply --server-side --force-conflicts -k .
 ```
 
 More info at https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/
+
+Results can be seen by running:
+```
+> $ k get pods -n argocd                                                                                
+NAME                                               READY   STATUS    RESTARTS   AGE
+argocd-application-controller-0                    1/1     Running   0          25m
+argocd-applicationset-controller-77475dfcf-7ngqr   1/1     Running   0          2m11s
+argocd-dex-server-6485c5ddf5-cnmjl                 1/1     Running   0          25m
+argocd-notifications-controller-758f795776-8ct9t   1/1     Running   0          25m
+argocd-redis-6cc4bb5db5-djd7d                      1/1     Running   0          25m
+argocd-repo-server-c76cf57cd-fg8hq                 1/1     Running   0          25m
+argocd-server-6f85b59c87-fgxqt                     1/1     Running   0          25m```
+```
