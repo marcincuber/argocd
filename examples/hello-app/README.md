@@ -1,16 +1,22 @@
 # Hello application
 
-This directory is the Git source watched by the `hello-minikube` Argo CD
-Application in [`../../bootstrap/hello-minikube.yaml`](../../bootstrap/hello-minikube.yaml).
+This example demonstrates Kustomize composition:
 
-Change a manifest here, commit it, and push it to `main`. Argo CD will detect
-the new commit and reconcile the `hello-minikube` namespace automatically.
+- `base` owns the Deployment, Service, and generated content ConfigMap;
+- `overlays/local` runs two replicas for the main tutorial;
+- `overlays/dev` runs one replica; and
+- `overlays/staging` runs three replicas.
 
-Good first changes are:
+Kustomize appends a content hash to `hello-content`. Editing
+`base/content/index.html` therefore changes the ConfigMap name referenced by the
+Deployment and triggers a rolling update.
 
-- edit the text in `configmap.yaml`;
-- change `replicas` in `deployment.yaml`; or
-- add a new Kubernetes manifest to `resources` in `kustomization.yaml`.
+Render an environment before committing:
 
-Run `kubectl kustomize examples/hello-app` from the repository root to render
-and inspect the Kubernetes objects before committing.
+```bash
+kubectl kustomize examples/hello-app/overlays/local
+kubectl kustomize examples/hello-app/overlays/staging
+```
+
+The main Application watches `overlays/local`. The optional ApplicationSet in
+`advanced/` generates Applications for the other two overlays.

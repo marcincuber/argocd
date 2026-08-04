@@ -1,0 +1,73 @@
+name: Validate tutorial
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  manifests-and-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Read pinned versions
+        id: versions
+        shell: bash
+        run: |
+          source .versions.env
+          echo "kubernetes=${KUBERNETES_VERSION}" >>"${GITHUB_OUTPUT}"
+          echo "kubeconform=${KUBECONFORM_VERSION}" >>"${GITHUB_OUTPUT}"
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: ${{ steps.versions.outputs.kubernetes }}
+
+      - name: Install kubeconform
+        shell: bash
+        run: |
+          version="${{ steps.versions.outputs.kubeconform }}"
+          curl -fsSLO "https://github.com/yannh/kubeconform/releases/download/${version}/kubeconform-linux-amd64.tar.gz"
+          tar -xzf kubeconform-linux-amd64.tar.gz kubeconform
+          sudo install -m 0755 kubeconform /usr/local/bin/kubeconform
+
+      - name: Install Markdown linter
+        run: npm install --global markdownlint-cli2@0.18.1
+
+      - name: Render and validate
+        run: make validate
+
+      - name: Check documentation links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress
+            --exclude 'https?://localhost.*'
+            --exclude-path './LICENSE'
+            './**/*.md'
+          fail: true
+
+  current-versions:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Compare pins with upstream releases
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./scripts/check-versions.sh

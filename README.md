@@ -1,109 +1,128 @@
 # Run Argo CD locally with Minikube
 
-This tutorial creates a local Kubernetes cluster, installs Argo CD, and
-bootstraps an example application that continuously synchronizes from this Git
-repository. No cloud account, DNS name, or ingress controller is required.
-
-By the end, the flow is:
+Create a local Kubernetes cluster, install Argo CD, and deploy an application
+that continuously reconciles itself from Git. The tutorial includes a fast
+automated path and a step-by-step path that explains what each component does.
 
 ```text
-Git push -> Argo CD detects the commit -> manifests are rendered -> Minikube is reconciled
+Git push -> Argo CD detects the revision -> Kustomize renders it -> Minikube is reconciled
 ```
 
-> This setup is for learning and local development. The non-HA Argo CD install,
-> the default administrator account, and port forwarding are not a production
-> configuration.
+Allow about 15–25 minutes for the first run, mostly for downloading images. No
+cloud account, DNS name, or ingress controller is required.
 
-## Version baseline
+> This is a learning environment. The non-HA installation, administrator login,
+> broad namespace permissions inside the tutorial project, and local port
+> forwarding are not a production configuration.
 
-These instructions were checked on 4 August 2026 and deliberately pin versions
-so that the tutorial remains reproducible:
+## Tested version baseline
 
-| Component | Version used here | Why |
+The central pins live in [`.versions.env`](.versions.env). They were checked on
+4 August 2026.
+
+| Component | Tested version | Purpose |
 | --- | --- | --- |
-| Kubernetes | `v1.36.2` | Latest stable Kubernetes patch release |
-| Minikube | `v1.38.1` or newer | Supports Kubernetes `v1.36.2` |
-| Argo CD | `v3.4.6` | Latest stable Argo CD release; install manifest is pinned in `cluster/kustomization.yaml` |
+| Kubernetes | `v1.36.3` | Local cluster API and workloads |
+| Minikube | `v1.38.1` | Local cluster lifecycle |
+| Argo CD | `v3.5.0` | GitOps controller, API, CLI, and UI |
+| Kubeconform | `v0.8.0` | Optional local and CI schema validation |
 
-Argo CD's published `3.4` test matrix currently lists Kubernetes `1.32` through
-`1.35`, although Minikube supports the newer Kubernetes `1.36.2` used by this
-tutorial. If you prefer the latest combination explicitly covered by that test
-matrix, replace `v1.36.2` in the start command with `v1.35.6`.
+Argo CD `3.5` is officially tested with Kubernetes `1.33` through `1.36`, so the
+latest versions used by this tutorial are within the published compatibility
+matrix.
 
-Useful upstream references:
-
-- [Kubernetes patch releases](https://kubernetes.io/releases/patch-releases/)
-- [Minikube start command](https://minikube.sigs.k8s.io/docs/commands/start/)
-- [Argo CD installation and tested Kubernetes versions](https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/)
-- [Argo CD releases](https://github.com/argoproj/argo-cd/releases)
-
-## Repository layout
+## What the repository contains
 
 ```text
 .
-├── bootstrap/                 # Argo CD Application objects applied once
-│   └── hello-minikube.yaml    # Enables auto-sync, prune, and self-heal
-├── cluster/                   # Pinned Argo CD installation
-└── examples/
-    └── hello-app/             # Desired state continuously watched in Git
+├── cluster/                    # Pinned Argo CD installer
+├── bootstrap/                  # Restricted AppProject and main Application
+├── advanced/                   # Optional dev/staging ApplicationSet
+├── examples/hello-app/
+│   ├── base/                   # Deployment, Service, and generated ConfigMap
+│   └── overlays/               # local, dev, and staging Kustomize overlays
+├── scripts/                    # Safe setup, verification, and maintenance tools
+├── docs/                       # Concepts and optional learning tracks
+└── Makefile                    # Short user-facing commands
 ```
 
-The bootstrap Application uses the public repository
-`https://github.com/marcincuber/argocd.git`, branch `main`. If you are working
-from a fork, change `spec.source.repoURL` in
-`bootstrap/hello-minikube.yaml` before applying it, then commit and push that
-change to your fork.
+The main Application enables automatic sync, pruning, self-healing, namespace
+creation, and retry backoff. Its `AppProject` limits it to this repository and
+namespaces matching `hello-*`.
 
-## 1. Install the command-line tools
+## 1. Install prerequisites
 
-You need:
-
-- a running Docker-compatible container engine;
-- `git`;
-- `minikube`;
-- `kubectl`; and
-- the `argocd` CLI (recommended for login and status commands).
-
-On macOS with Homebrew:
+You need Git, Make, `kubectl`, Minikube, the Argo CD CLI, and either Docker or
+Podman. On macOS:
 
 ```bash
-brew install minikube kubectl argocd
+brew install git make kubectl minikube argocd
 ```
 
 Install and start [Docker Desktop](https://docs.docker.com/desktop/) if you do
-not already have a container engine. Linux and Windows installation commands
-are available in the official guides for
-[Minikube](https://minikube.sigs.k8s.io/docs/start/),
-[`kubectl`](https://kubernetes.io/docs/tasks/tools/), and
-the [Argo CD CLI](https://argo-cd.readthedocs.io/en/stable/cli_installation/).
+not already have a container engine. See [platform setup](docs/platforms.md)
+for Linux, Windows/WSL, Apple Silicon, and Podman instructions.
 
-Check the tools and Docker before continuing:
+## 2. Fork and clone
 
-```bash
-docker info
-minikube version
-kubectl version --client
-argocd version --client
-```
-
-You do not need a separate `kustomize` installation: the commands below use
-the Kustomize support built into `kubectl`.
-
-## 2. Clone the repository
-
-Skip this step if you are already in this repository.
+Fork this repository so that you can push GitOps changes, then clone your fork:
 
 ```bash
-git clone https://github.com/marcincuber/argocd.git
+git clone https://github.com/YOUR-USER/argocd.git
 cd argocd
 ```
 
-Run all remaining commands from the repository root.
+The automation derives the Argo CD source URL and branch from your `origin`
+remote. You can override them at any time:
 
-## 3. Start Kubernetes with Minikube
+```bash
+make bootstrap \
+  REPO_URL=https://github.com/YOUR-USER/argocd.git \
+  REVISION=main
+```
 
-Create a dedicated profile named `argocd` using the latest stable Kubernetes
-release:
+Argo CD reads the remote repository—not uncommitted files on your computer.
+
+## Fast path
+
+Run the preflight check, create the cluster, install Argo CD, bootstrap the
+application, and execute the smoke test:
+
+```bash
+make doctor
+make all
+```
+
+`make all` stops at the first failure and prints diagnostics. If it succeeds,
+the Application is `Synced`, the workload is `Healthy`, two replicas are ready,
+and an in-cluster HTTP request has returned the expected page.
+
+Open the application in a separate terminal:
+
+```bash
+make port-forward-app
+```
+
+Visit [http://localhost:8081](http://localhost:8081).
+
+The sections below perform the same workflow one checkpoint at a time.
+
+## 3. Run the preflight check
+
+```bash
+make doctor
+```
+
+Expected checkpoint: every command is found and the selected container engine
+is reachable. The default driver is Docker; use `DRIVER=podman` for Podman.
+
+## 4. Create the Minikube cluster
+
+```bash
+make cluster
+```
+
+The defaults are equivalent to:
 
 ```bash
 minikube start \
@@ -112,60 +131,52 @@ minikube start \
   --container-runtime containerd \
   --cpus 4 \
   --memory 6144 \
-  --kubernetes-version v1.36.2
+  --kubernetes-version v1.36.3
 ```
 
-Minikube changes the active `kubectl` context to `argocd`. Verify the context,
-cluster version, and node health before installing anything:
+Expected checkpoint:
 
-```bash
-kubectl config current-context
-kubectl version
-kubectl get nodes -o wide
-minikube status --profile argocd
+```text
+NAME     STATUS   ROLES           VERSION
+argocd   Ready    control-plane   v1.36.3
 ```
 
-The current context should be `argocd`, and the node should report `Ready`. If
-Docker has less than 6 GiB available, increase its memory allocation or lower
-`--memory` to `4096`; startup and image pulls will be slower with 4 GiB.
-
-## 4. Install Argo CD
-
-The `cluster` Kustomization creates the `argocd` namespace and installs the
-pinned non-HA Argo CD release:
+All scripts refuse to modify Kubernetes if the active context is not the
+configured Minikube profile. Override resources when necessary:
 
 ```bash
-kubectl apply --server-side --force-conflicts -k cluster
+make cluster CPUS=3 MEMORY=4096 DRIVER=podman
 ```
 
-Wait until every Argo CD pod is ready. The first pull can take a few minutes:
+## 5. Install Argo CD
 
 ```bash
-kubectl wait \
-  --namespace argocd \
-  --for=condition=Ready pod \
-  --all \
-  --timeout=300s
+make install
+```
 
+This applies `cluster/` with server-side apply, waits for the CRDs, and checks
+all Argo CD Deployment and StatefulSet rollouts. Expected checkpoint: every pod
+in the `argocd` namespace is `Running` and ready.
+
+Inspect without changing the cluster:
+
+```bash
 kubectl get pods --namespace argocd
+kubectl get crd applications.argoproj.io
 ```
 
-All pods should show `Running` and all containers should be ready. A pod that
-briefly shows `Init` or `ContainerCreating` during the initial image pull is
-normal.
+## 6. Open Argo CD and log in
 
-## 5. Open Argo CD and log in
-
-Keep this port-forward running in its own terminal:
+Keep the UI port-forward running:
 
 ```bash
-kubectl port-forward --namespace argocd service/argocd-server 8080:443
+make port-forward-argocd
 ```
 
-The UI is now at [https://localhost:8080](https://localhost:8080). The local
-certificate is self-signed, so the browser will display a certificate warning.
+Visit [https://localhost:8080](https://localhost:8080). A certificate warning is
+expected because this disposable environment uses a self-signed certificate.
 
-In another terminal, print the generated password and log in as `admin`:
+In another terminal:
 
 ```bash
 argocd admin initial-password --namespace argocd
@@ -176,92 +187,78 @@ argocd login localhost:8080 \
   --insecure
 ```
 
-For a disposable local cluster it is fine to keep the generated password. On a
-long-lived installation, change it with `argocd account update-password` and
-delete the initial secret afterward.
+## 7. Bootstrap GitOps
 
-## 6. Bootstrap the automatically synchronized application
-
-Apply the Argo CD `Application` object:
+Ensure the current revision is committed and pushed, then run:
 
 ```bash
-kubectl apply -k bootstrap
+make bootstrap
+make verify
 ```
 
-That single object tells Argo CD to:
+The bootstrap command safely renders the manifests with your detected Git
+remote instead of the tutorial author's hard-coded repository. It creates:
 
-- watch `examples/hello-app` on the `main` branch;
-- create the `hello-minikube` namespace;
-- deploy the ConfigMap, Deployment, and Service;
-- automatically apply new Git commits;
-- repair manual changes in the cluster (`selfHeal: true`); and
-- delete resources removed from Git (`prune: true`).
+- `local-tutorial`, an AppProject restricted to the repository and `hello-*`;
+- `hello-minikube`, an Application watching `overlays/local`; and
+- the `hello-minikube` namespace and application resources through Argo CD.
 
-Watch the first synchronization and wait for it to become healthy:
+Expected checkpoint:
+
+```text
+NAME             SYNC STATUS   HEALTH STATUS
+hello-minikube   Synced        Healthy
+```
+
+Use an explicit source when working from a different remote or branch:
 
 ```bash
-argocd app get hello-minikube
-argocd app wait hello-minikube --sync --health --timeout 300
-
-kubectl get all --namespace hello-minikube
+make bootstrap REPO_URL=https://github.com/USER/REPO.git REVISION=feature/tutorial
 ```
 
-If the Application reports `ComparisonError`, confirm that the repository URL,
-branch, and path in `bootstrap/hello-minikube.yaml` exist in the remote Git
-repository. Argo CD reads Git, not uncommitted files on your laptop.
+Private repositories require credentials before bootstrapping. Follow
+[the private repository guide](docs/private-repositories.md).
 
-## 7. Open the example application
-
-Keep a second port-forward running:
+## 8. Open and inspect the example
 
 ```bash
-kubectl port-forward \
-  --namespace hello-minikube \
-  service/hello-minikube 8081:80
+make port-forward-app
 ```
 
-Open [http://localhost:8081](http://localhost:8081), or test it from another
-terminal:
+Visit [http://localhost:8081](http://localhost:8081), or run:
 
 ```bash
 curl http://localhost:8081
+make status
 ```
 
-You should see **Hello from Argo CD!**.
+## 9. GitOps exercises
 
-## 8. Prove that automatic sync works
+### Exercise A: automatic sync and a rolling content update
 
-Edit the message in `examples/hello-app/configmap.yaml` or change `replicas: 2`
-in `examples/hello-app/deployment.yaml`. Render the manifests locally, then
-commit and push:
+Edit `examples/hello-app/base/content/index.html`, then render, commit, and push:
 
 ```bash
-kubectl kustomize examples/hello-app
-git add examples/hello-app
-git commit -m "Update the hello application"
-git push origin main
+kubectl kustomize examples/hello-app/overlays/local
+git add examples/hello-app/base/content/index.html
+git commit -m "Change the tutorial page"
+git push origin HEAD
 ```
 
-Argo CD polls Git periodically, so detection can take up to about three
-minutes. Force an immediate Git refresh without manually syncing the app:
+Kustomize gives the generated ConfigMap a content hash. The changed name updates
+the Deployment pod template, producing a real rolling update instead of waiting
+for a mounted ConfigMap cache refresh.
 
 ```bash
 argocd app get hello-minikube --refresh
-argocd app wait hello-minikube --sync --health --timeout 300
+kubectl rollout status deployment/hello-minikube \
+  --namespace hello-minikube
+kubectl get configmaps --namespace hello-minikube
 ```
 
-Refresh [http://localhost:8081](http://localhost:8081), or inspect the deployed
-state:
+### Exercise B: self-healing
 
-```bash
-kubectl get deployment hello-minikube \
-  --namespace hello-minikube \
-  -o jsonpath='{.spec.replicas}{" replicas\n"}'
-```
-
-### Prove self-healing
-
-Create drift by changing the live Deployment without changing Git:
+Create live drift without changing Git:
 
 ```bash
 kubectl scale deployment hello-minikube \
@@ -273,88 +270,108 @@ kubectl get deployment hello-minikube \
   --watch
 ```
 
-Argo CD will restore the replica count declared in Git. Press `Ctrl+C` to stop
-watching.
+Argo CD restores the two replicas declared by `overlays/local`. Press `Ctrl+C`
+after the replica count returns to two.
+
+### Exercise C: pruning
+
+Delete `base/prune-demo.yaml` and remove it from `base/kustomization.yaml`, then
+commit and push:
+
+```bash
+git add examples/hello-app/base
+git commit -m "Remove the prune demonstration resource"
+git push origin HEAD
+argocd app get hello-minikube --refresh
+```
+
+Observe Argo CD remove the ConfigMap because `prune: true`:
+
+```bash
+kubectl get configmap prune-demo --namespace hello-minikube
+```
+
+Expected result: `NotFound`.
+
+### Exercise D: Git rollback
+
+Restore the previous desired state with Git rather than editing the cluster:
+
+```bash
+git revert HEAD
+git push origin HEAD
+argocd app get hello-minikube --refresh
+make verify
+```
+
+Argo CD recreates `prune-demo`. This is the auditable GitOps rollback pattern.
+
+## Optional learning tracks
+
+- [Core concepts and security boundaries](docs/concepts.md)
+- [Kustomize overlays, ApplicationSet, and webhooks](docs/advanced.md)
+- [Private repository authentication](docs/private-repositories.md)
+- [Safe Argo CD upgrades and rollback](docs/upgrading.md)
+- [Troubleshooting decision guide](docs/troubleshooting.md)
+- [Platform-specific installation](docs/platforms.md)
 
 ## Everyday commands
 
 ```bash
-# Show Applications using kubectl
-kubectl get applications --namespace argocd
-
-# Show detailed sync and health information
-argocd app get hello-minikube
-
-# Show resources managed by the Application
-argocd app resources hello-minikube
-
-# Inspect controller logs
-kubectl logs --namespace argocd \
-  statefulset/argocd-application-controller \
-  --tail=100
-
-# Stop the cluster without deleting it
-minikube stop --profile argocd
-
-# Start the same cluster again
-minikube start --profile argocd
+make help                 # List commands and configurable variables
+make status               # Show cluster, controllers, and application
+make verify               # Repeat the complete smoke test
+make render               # Render every Kustomization locally
+make validate             # Schema-check manifests and lint scripts/docs
+make check-versions       # Compare pins with upstream stable releases
+make stop                 # Preserve but stop the cluster
+make start                # Restart the same profile
+make upgrade              # Preview and apply a pinned Argo CD upgrade
+make clean                # Confirm and delete only this Minikube profile
 ```
 
-## Troubleshooting
-
-### The wrong cluster is active
-
-Always check before applying manifests:
+For complete local validation on macOS, install the development tools once:
 
 ```bash
-kubectl config current-context
-kubectl config use-context argocd
+brew install kubeconform shellcheck node
+npm install --global markdownlint-cli2@0.18.1
+make validate
 ```
-
-### Argo CD pods do not become ready
-
-```bash
-kubectl get pods --namespace argocd
-kubectl describe pods --namespace argocd
-minikube logs --profile argocd --problems
-```
-
-`ImagePullBackOff` usually means the container engine cannot reach an image
-registry. `Pending` often means Docker needs more memory or CPU.
-
-### The Application is `OutOfSync` or has a comparison error
-
-```bash
-argocd app get hello-minikube --hard-refresh
-argocd app diff hello-minikube
-kubectl get application hello-minikube \
-  --namespace argocd \
-  -o yaml
-```
-
-Check that your changes were committed and pushed to the branch configured in
-the Application. For a private fork, add repository credentials in Argo CD or
-make the repository accessible to the local Argo CD instance.
-
-### Port 8080 or 8081 is already in use
-
-Change only the local side of the mapping, for example `8443:443` for Argo CD
-or `8082:80` for the example. Then use the matching local URL.
 
 ## Clean up
 
-Delete only the example and let its finalizer remove the managed resources:
+Delete only the example and wait for its finalizer to prune managed resources
+before deleting the project:
 
 ```bash
-kubectl delete -k bootstrap
+kubectl delete application hello-minikube --namespace argocd
+kubectl wait --for=delete application/hello-minikube \
+  --namespace argocd \
+  --timeout=300s
+kubectl delete appproject local-tutorial --namespace argocd
 ```
 
-Or delete the entire disposable Minikube profile, including Argo CD and the
-example:
+Delete the entire disposable cluster with an interactive profile-name check:
 
 ```bash
-minikube delete --profile argocd
+make clean
 ```
 
-The Git files remain unchanged, so you can recreate the complete environment by
-starting again at step 3.
+Git files remain unchanged, so the environment can be recreated with
+`make all`.
+
+## Maintenance and validation
+
+GitHub Actions renders and schema-validates every manifest, lints Bash and
+Markdown, checks documentation links, and performs a weekly version check.
+Dependabot updates GitHub Actions. The included `renovate.json5` updates tool
+pins, the Argo CD manifest, and the digest-pinned NGINX image when the Renovate
+app is enabled for the repository.
+
+Primary references:
+
+- [Kubernetes releases](https://kubernetes.io/releases/patch-releases/)
+- [Minikube documentation](https://minikube.sigs.k8s.io/docs/)
+- [Argo CD installation](https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/)
+- [Argo CD automated sync](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/)
+- [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/)

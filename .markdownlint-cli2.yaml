@@ -1,0 +1,11 @@
+config:
+  MD013: false
+  MD024:
+    siblings_only: true
+  MD033: false
+globs:
+  - "README.md"
+  - "docs/**/*.md"
+  - "examples/**/*.md"
+ignores:
+  - "LICENSE"

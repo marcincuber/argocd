@@ -6,7 +6,8 @@ resources:
   - namespace.yaml
   # Pin the tutorial to a known release. Update this URL deliberately when
   # upgrading so that every learner installs the same set of manifests.
-  - https://raw.githubusercontent.com/argoproj/argo-cd/v3.4.6/manifests/install.yaml
+  # renovate: datasource=github-releases depName=argoproj/argo-cd
+  - https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.0/manifests/install.yaml
 
 patches:
   - patch: |-

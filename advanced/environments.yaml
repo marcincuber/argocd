@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: hello-environments
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - list:
+        elements:
+          - environment: dev
+            namespace: hello-dev
+          - environment: staging
+            namespace: hello-staging
+  template:
+    metadata:
+      name: "hello-{{.environment}}"
+      labels:
+        tutorial.argocd.io/environment: "{{.environment}}"
+    spec:
+      project: local-tutorial
+      source:
+        repoURL: https://github.com/marcincuber/argocd.git
+        targetRevision: main
+        path: "examples/hello-app/overlays/{{.environment}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        managedNamespaceMetadata:
+          labels:
+            app.kubernetes.io/managed-by: argocd
+            tutorial.argocd.io/environment: "{{.environment}}"
+        automated:
+          enabled: true
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - PruneLast=true

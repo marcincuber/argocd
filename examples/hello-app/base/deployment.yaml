@@ -3,14 +3,15 @@ kind: Deployment
 metadata:
   name: hello-minikube
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
   template:
     spec:
       containers:
         - name: nginx
-          image: nginx:1.29.0-alpine
+          # Multi-platform digest for the official nginx:1.29.8-alpine image.
+          image: nginx:1.29.8-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -34,6 +35,8 @@ spec:
             limits:
               cpu: 100m
               memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
           volumeMounts:
             - name: content
               mountPath: /usr/share/nginx/html

@@ -6,15 +6,19 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: local-tutorial
   source:
     repoURL: https://github.com/marcincuber/argocd.git
     targetRevision: main
-    path: examples/hello-app
+    path: examples/hello-app/overlays/local
   destination:
     server: https://kubernetes.default.svc
     namespace: hello-minikube
   syncPolicy:
+    managedNamespaceMetadata:
+      labels:
+        app.kubernetes.io/managed-by: argocd
+        tutorial.argocd.io/environment: local
     automated:
       enabled: true
       prune: true

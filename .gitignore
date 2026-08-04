@@ -35,3 +35,8 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+# Local tutorial tooling
+.DS_Store
+.lycheecache
+lychee/
