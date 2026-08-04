@@ -13,6 +13,7 @@ waiting for Kubernetes, or testing HTTP.
 | Symptom | Likely cause | First check |
 | --- | --- | --- |
 | Context safety error | Another cluster is active | `kubectl config current-context` |
+| Bootstrap says API server is unreachable | Minikube is stopped or stale | `make start` |
 | Minikube start fails | Driver, CPU, or memory issue | `minikube logs --profile argocd --problems` |
 | Argo CD pod is `Pending` | Insufficient resources | `kubectl describe pod -n argocd POD` |
 | `ImagePullBackOff` | Registry or proxy problem | Pod events and container-engine connectivity |
@@ -30,6 +31,19 @@ kubectl config use-context argocd
 ```
 
 The scripts intentionally stop rather than applying to a different cluster.
+
+If the context name is correct but its API endpoint is stale or stopped:
+
+```bash
+make start
+kubectl get --raw=/readyz --request-timeout=10s
+make bootstrap
+```
+
+The bootstrap command gives the initial readiness check five seconds and each
+subsequent Kubernetes request 30 seconds. These can be changed with
+`KUBECTL_READY_TIMEOUT=10s` and `KUBECTL_REQUEST_TIMEOUT=60s` on unusually slow
+machines.
 
 ## Argo CD installation problems
 

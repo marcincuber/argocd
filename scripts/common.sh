@@ -21,6 +21,8 @@ fi
 
 PROFILE="${PROFILE:-argocd}"
 TIMEOUT="${TIMEOUT:-300}"
+KUBECTL_REQUEST_TIMEOUT="${KUBECTL_REQUEST_TIMEOUT:-30s}"
+KUBECTL_READY_TIMEOUT="${KUBECTL_READY_TIMEOUT:-5s}"
 ARGOCD_NAMESPACE="argocd"
 APP_NAME="hello-minikube"
 APP_NAMESPACE="hello-minikube"
@@ -48,6 +50,17 @@ assert_tutorial_context() {
   current_context="$(kubectl config current-context 2>/dev/null || true)"
   [[ "${current_context}" == "${PROFILE}" ]] || fail \
     "kubectl context is '${current_context:-unset}', expected '${PROFILE}'. Run: kubectl config use-context ${PROFILE}"
+}
+
+assert_cluster_reachable() {
+  local readiness
+
+  if ! readiness="$(kubectl get --raw=/readyz --request-timeout="${KUBECTL_READY_TIMEOUT}" 2>&1)"; then
+    fail "Kubernetes context '${PROFILE}' exists but its API server is unreachable (${readiness}). Run: make start (or make cluster if the profile no longer exists)"
+  fi
+
+  [[ "${readiness}" == "ok" || "${readiness}" == ok$'\n'* ]] || fail \
+    "Kubernetes API server is not ready: ${readiness}"
 }
 
 normalise_repo_url() {
