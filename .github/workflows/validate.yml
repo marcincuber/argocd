@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Read pinned versions
         id: versions
@@ -32,7 +32,7 @@ jobs:
           echo "kubeconform=${KUBECONFORM_VERSION}" >>"${GITHUB_OUTPUT}"
 
       - name: Install kubectl
-        uses: azure/setup-kubectl@v4
+        uses: azure/setup-kubectl@v5
         with:
           version: ${{ steps.versions.outputs.kubernetes }}
 
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Compare pins with upstream releases
         env:
