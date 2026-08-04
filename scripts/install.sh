@@ -14,10 +14,10 @@ kubectl wait \
   --for=condition=Established \
   customresourcedefinition/applications.argoproj.io \
   --timeout="${TIMEOUT}s"
-kubectl rollout status deployment --all \
+kubectl rollout status deployment \
   --namespace "${ARGOCD_NAMESPACE}" \
   --timeout="${TIMEOUT}s"
-kubectl rollout status statefulset --all \
+kubectl rollout status statefulset \
   --namespace "${ARGOCD_NAMESPACE}" \
   --timeout="${TIMEOUT}s"
 

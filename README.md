@@ -183,7 +183,7 @@ argocd admin initial-password --namespace argocd
 
 argocd login localhost:8080 \
   --username admin \
-  --password "$(argocd admin initial-password --namespace argocd)" \
+  --password "$(argocd admin initial-password --namespace argocd | head -1)" \
   --insecure
 ```
 
