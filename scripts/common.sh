@@ -26,7 +26,6 @@ KUBECTL_READY_TIMEOUT="${KUBECTL_READY_TIMEOUT:-5s}"
 ARGOCD_NAMESPACE="argocd"
 APP_NAME="hello-minikube"
 APP_NAMESPACE="hello-minikube"
-DEFAULT_REPO_URL="https://github.com/marcincuber/argocd.git"
 
 log() {
   printf '\n==> %s\n' "$*"
@@ -101,29 +100,4 @@ resolve_revision() {
   fi
 
   printf '%s\n' "${detected_revision:-main}"
-}
-
-render_with_git_source() {
-  local source_path="$1"
-  local repo_url="$2"
-  local revision="$3"
-
-  kubectl kustomize "${TUTORIAL_ROOT}/${source_path}" | awk \
-    -v old_repo="${DEFAULT_REPO_URL}" \
-    -v new_repo="${repo_url}" \
-    -v revision="${revision}" '
-      function replace_all(value, old, replacement, position) {
-        while ((position = index(value, old)) > 0) {
-          value = substr(value, 1, position - 1) replacement substr(value, position + length(old))
-        }
-        return value
-      }
-      {
-        line = replace_all($0, old_repo, new_repo)
-        if (line ~ /^[[:space:]]*targetRevision:/) {
-          sub(/targetRevision:.*/, "targetRevision: " revision, line)
-        }
-        print line
-      }
-    '
 }

@@ -45,6 +45,11 @@ subsequent Kubernetes request 30 seconds. These can be changed with
 `KUBECTL_READY_TIMEOUT=10s` and `KUBECTL_REQUEST_TIMEOUT=60s` on unusually slow
 machines.
 
+Bootstrap has no rendering stage. It applies the local Application with
+reconciliation paused, applies the AppProject, patches both with the detected
+Git source, and then enables reconciliation. Every Kubernetes operation has an
+explicit request timeout.
+
 ## Argo CD installation problems
 
 ```bash

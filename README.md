@@ -196,8 +196,9 @@ make bootstrap
 make verify
 ```
 
-The bootstrap command safely renders the manifests with your detected Git
-remote instead of the tutorial author's hard-coded repository. It creates:
+The bootstrap command applies the local resources with reconciliation paused,
+sets your detected Git remote and branch, and then enables reconciliation. It
+does not generate or render an intermediate manifest. It creates:
 
 - `local-tutorial`, an AppProject restricted to the repository and `hello-*`;
 - `hello-minikube`, an Application watching `overlays/local`; and

@@ -3,6 +3,9 @@ kind: Application
 metadata:
   name: hello-minikube
   namespace: argocd
+  annotations:
+    # The bootstrap script removes this after setting the user's repository.
+    argocd.argoproj.io/skip-reconcile: "true"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
