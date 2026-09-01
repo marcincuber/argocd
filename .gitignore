@@ -38,6 +38,4 @@ terraform.rc
 
 # Local tutorial tooling
 .DS_Store
-.lycheecache
-lychee/
 node_modules/
