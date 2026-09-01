@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tutorial-examples-complex
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - list:
+        elements:
+          - name: redis
+            path: examples/redis
+          - name: blue-green
+            path: examples/blue-green
+          - name: multi-tier
+            path: examples/multi-tier
+          - name: rolling-update
+            path: examples/rolling-update
+  template:
+    metadata:
+      name: "example-{{.name}}"
+      labels:
+        app.kubernetes.io/part-of: argocd-local-tutorial
+        tutorial.argocd.io/difficulty: complex
+        tutorial.argocd.io/example: "{{.name}}"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: local-tutorial
+      source:
+        repoURL: https://github.com/marcincuber/argocd.git
+        targetRevision: main
+        path: "{{.path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "tutorial-{{.name}}"
+      syncPolicy:
+        managedNamespaceMetadata:
+          labels:
+            app.kubernetes.io/managed-by: argocd
+            tutorial.argocd.io/difficulty: complex
+            tutorial.argocd.io/example: "{{.name}}"
+        automated:
+          enabled: true
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+      revisionHistoryLimit: 5

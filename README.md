@@ -36,13 +36,15 @@ Kubernetes version in its published compatibility matrix.
 .
 ├── cluster/                    # Pinned Argo CD installer
 ├── bootstrap/                  # Restricted AppProject and main Application
-├── catalog/                    # Four optional Applications generated as a set
+├── catalog/                    # Simple and complex ApplicationSet tracks
 ├── advanced/                   # Optional dev/staging ApplicationSet
 ├── examples/hello-app/
 │   ├── base/                   # Deployment, Service, and generated ConfigMap
 │   └── overlays/               # local, dev, and staging Kustomize overlays
-├── examples/{podinfo,redis,cronjob,blue-green}/
-│                               # Optional workload-pattern examples
+├── examples/{configmap,web-server,podinfo,cronjob}/
+│                               # Simple workload-pattern examples
+├── examples/{redis,blue-green,multi-tier,rolling-update}/
+│                               # Complex workload-pattern examples
 ├── scripts/                    # Safe setup, verification, and maintenance tools
 ├── docs/                       # Concepts and optional learning tracks
 └── Makefile                    # Short user-facing commands
@@ -236,19 +238,22 @@ curl http://localhost:8081
 make status
 ```
 
-## Optional: deploy all five examples
+## Optional: deploy more examples
 
-The main application is example one. Deploy four additional Applications with
-one ApplicationSet:
+The core application is example one. Deploy the four simple examples first,
+the four complex examples, or both tracks:
 
 ```bash
+make examples-simple
+make examples-complex
+# Or deploy all nine applications:
 make examples
 kubectl get applicationsets,applications --namespace argocd
 ```
 
-The catalog adds a health-aware Podinfo microservice, persistent Redis
-StatefulSet, scheduled heartbeat CronJob, and blue/green web deployment. See the
-[example catalog](examples/README.md) for verification exercises and cleanup.
+The catalog progresses from configuration drift and basic workloads to
+persistent state, multi-tier routing, and release strategies. See the
+[example catalog](examples/README.md) for exercises and cleanup.
 
 ## 9. GitOps exercises
 
@@ -339,7 +344,9 @@ Argo CD recreates `prune-demo`. This is the auditable GitOps rollback pattern.
 make help                 # List commands and configurable variables
 make status               # Show cluster, controllers, and application
 make verify               # Repeat the complete smoke test
-make examples             # Deploy all five tutorial applications
+make examples-simple      # Deploy the introductory example track
+make examples-complex     # Deploy the advanced example track
+make examples             # Deploy all nine tutorial applications
 make render               # Render every Kustomization locally
 make validate             # Schema-check manifests and lint scripts/docs
 make check-versions       # Compare pins with upstream stable releases

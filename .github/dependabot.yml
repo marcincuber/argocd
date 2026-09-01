@@ -37,6 +37,9 @@ updates:
       - /examples/redis
       - /examples/cronjob
       - /examples/blue-green
+      - /examples/web-server
+      - /examples/multi-tier
+      - /examples/rolling-update
     schedule:
       interval: weekly
       day: monday

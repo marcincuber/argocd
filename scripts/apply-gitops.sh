@@ -18,8 +18,9 @@ fi
 
 SOURCE_PATH="${1:-bootstrap}"
 [[ "${SOURCE_PATH}" == "bootstrap" || "${SOURCE_PATH}" == "advanced" || \
-  "${SOURCE_PATH}" == "catalog" ]] || \
-  fail "Source must be 'bootstrap', 'catalog', or 'advanced'."
+  "${SOURCE_PATH}" == "catalog" || "${SOURCE_PATH}" == "catalog-simple" || \
+  "${SOURCE_PATH}" == "catalog-complex" ]] || \
+  fail "Source must be 'bootstrap', 'catalog', 'catalog-simple', 'catalog-complex', or 'advanced'."
 
 log "Resolving the Git repository and revision"
 REPOSITORY="$(resolve_repo_url)"
@@ -88,17 +89,39 @@ else
     --patch "{\"spec\":{\"sourceRepos\":[\"${REPOSITORY}\"],\"destinations\":[{\"namespace\":\"hello-*\",\"server\":\"https://kubernetes.default.svc\"},{\"namespace\":\"tutorial-*\",\"server\":\"https://kubernetes.default.svc\"}]}}" \
     --request-timeout="${KUBECTL_REQUEST_TIMEOUT}"
 
-  log "Applying the optional example catalog"
-  kubectl apply \
-    --request-timeout="${KUBECTL_REQUEST_TIMEOUT}" \
-    -f "${TUTORIAL_ROOT}/catalog/examples.yaml"
+  applicationsets=()
+  case "${SOURCE_PATH}" in
+    catalog)
+      log "Applying both optional example tracks"
+      kubectl apply \
+        --request-timeout="${KUBECTL_REQUEST_TIMEOUT}" \
+        -k "${TUTORIAL_ROOT}/catalog"
+      applicationsets=(tutorial-examples tutorial-examples-complex)
+      ;;
+    catalog-simple)
+      log "Applying the simple example track"
+      kubectl apply \
+        --request-timeout="${KUBECTL_REQUEST_TIMEOUT}" \
+        -f "${TUTORIAL_ROOT}/catalog/simple.yaml"
+      applicationsets=(tutorial-examples)
+      ;;
+    catalog-complex)
+      log "Applying the complex example track"
+      kubectl apply \
+        --request-timeout="${KUBECTL_REQUEST_TIMEOUT}" \
+        -f "${TUTORIAL_ROOT}/catalog/complex.yaml"
+      applicationsets=(tutorial-examples-complex)
+      ;;
+  esac
 
   log "Configuring ${REPOSITORY} at ${TARGET_REVISION}"
-  kubectl patch applicationset tutorial-examples \
-    --namespace "${ARGOCD_NAMESPACE}" \
-    --type merge \
-    --patch "{\"spec\":{\"template\":{\"spec\":{\"source\":{\"repoURL\":\"${REPOSITORY}\",\"targetRevision\":\"${TARGET_REVISION}\"}}}}}" \
-    --request-timeout="${KUBECTL_REQUEST_TIMEOUT}"
+  for applicationset in "${applicationsets[@]}"; do
+    kubectl patch applicationset "${applicationset}" \
+      --namespace "${ARGOCD_NAMESPACE}" \
+      --type merge \
+      --patch "{\"spec\":{\"template\":{\"spec\":{\"source\":{\"repoURL\":\"${REPOSITORY}\",\"targetRevision\":\"${TARGET_REVISION}\"}}}}}" \
+      --request-timeout="${KUBECTL_REQUEST_TIMEOUT}"
+  done
 
   kubectl get applicationset,applications \
     --namespace "${ARGOCD_NAMESPACE}" \

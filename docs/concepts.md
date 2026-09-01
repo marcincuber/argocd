@@ -27,7 +27,8 @@ resource that has been removed from Git is deleted.
 | --- | --- |
 | `AppProject/local-tutorial` | Restricts permitted repositories, destinations, and resource types |
 | `Application/hello-minikube` | Connects one Git path to one cluster namespace |
-| `ApplicationSet/tutorial-examples` | Optionally generates four workload-pattern Applications |
+| `ApplicationSet/tutorial-examples` | Generates the four introductory Applications |
+| `ApplicationSet/tutorial-examples-complex` | Generates four advanced workload-pattern Applications |
 | `ApplicationSet/hello-environments` | Optionally generates dev and staging Applications from a list |
 | Kustomize base | Defines reusable Deployment, Service, and content |
 | Kustomize overlay | Changes replica count and environment labels without copying the base |

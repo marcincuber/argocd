@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - backend.yaml
+  - frontend.yaml
+  - services.yaml
+
+configMapGenerator:
+  - name: frontend-config
+    files:
+      - default.conf
+  - name: frontend-content
+    literals:
+      - index.html=<h1>Multi-tier example</h1><p>Try the backend through /api/.</p>

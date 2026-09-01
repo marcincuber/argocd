@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tutorial-config
+  labels:
+    app.kubernetes.io/name: tutorial-config
+    app.kubernetes.io/part-of: argocd-local-tutorial
+data:
+  greeting: Hello from GitOps
+  owner: platform-team
+  reconciliation: automated

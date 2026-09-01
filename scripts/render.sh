@@ -26,6 +26,10 @@ paths=(
   examples/redis
   examples/cronjob
   examples/blue-green
+  examples/configmap
+  examples/web-server
+  examples/multi-tier
+  examples/rolling-update
 )
 
 for path in "${paths[@]}"; do
