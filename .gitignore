@@ -40,3 +40,4 @@ terraform.rc
 .DS_Store
 .lycheecache
 lychee/
+node_modules/

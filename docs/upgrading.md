@@ -34,8 +34,10 @@ make upgrade
 make verify
 ```
 
-Renovate is configured to update the related version locations in one grouped
-pull request when its GitHub app is enabled.
+These tested-version pins are intentionally reviewed and updated together.
+Dependabot maintains package manifests, GitHub Actions, and container images,
+but it does not update arbitrary environment variables or Kustomize remote URLs.
+Run `make check-versions` when reviewing the baseline.
 
 ## Verify after an upgrade
 

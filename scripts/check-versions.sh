@@ -40,7 +40,7 @@ check_version "Argo CD" "${ARGOCD_VERSION}" "$(github_latest argoproj/argo-cd)"
 check_version "Kubeconform" "${KUBECONFORM_VERSION}" "$(github_latest yannh/kubeconform)"
 
 if ((failures > 0)); then
-  fail "${failures} pinned version(s) are behind upstream. Renovate should propose updates."
+  fail "${failures} tested version pin(s) are behind upstream. Review and update them together."
 fi
 
 printf '\nAll tracked tools use the latest stable releases.\n'

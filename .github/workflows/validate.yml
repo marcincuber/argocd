@@ -23,6 +23,15 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install development dependencies
+        run: npm ci
+
       - name: Read pinned versions
         id: versions
         shell: bash
@@ -44,9 +53,6 @@ jobs:
           tar -xzf kubeconform-linux-amd64.tar.gz kubeconform
           sudo install -m 0755 kubeconform /usr/local/bin/kubeconform
 
-      - name: Install Markdown linter
-        run: npm install --global markdownlint-cli2@0.18.1
-
       - name: Render and validate
         run: make validate
 
@@ -59,15 +65,3 @@ jobs:
             --exclude-path './LICENSE'
             './**/*.md'
           fail: true
-
-  current-versions:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Compare pins with upstream releases
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: ./scripts/check-versions.sh

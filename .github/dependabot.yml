@@ -5,7 +5,41 @@ updates:
     schedule:
       interval: weekly
       day: monday
+      time: "06:00"
+      timezone: Europe/London
+    labels:
+      - dependencies
     groups:
       github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/London
+    labels:
+      - dependencies
+    groups:
+      npm-development-dependencies:
+        dependency-type: development
+        patterns:
+          - "*"
+
+  # Dependabot supports Docker image tags in Kubernetes manifests.
+  - package-ecosystem: docker
+    directory: /examples/hello-app/base
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/London
+    labels:
+      - dependencies
+    groups:
+      container-images:
         patterns:
           - "*"

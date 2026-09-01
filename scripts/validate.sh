@@ -31,14 +31,21 @@ for script_file in "${TUTORIAL_ROOT}"/scripts/*.sh; do
 done
 shellcheck -x -P "${TUTORIAL_ROOT}/scripts" "${script_entrypoints[@]}"
 
-if command -v markdownlint-cli2 >/dev/null 2>&1; then
+markdownlint_cli="${TUTORIAL_ROOT}/node_modules/.bin/markdownlint-cli2"
+if [[ -x "${markdownlint_cli}" ]]; then
+  log "Linting Markdown"
+  "${markdownlint_cli}" \
+    "${TUTORIAL_ROOT}/README.md" \
+    "${TUTORIAL_ROOT}/docs/**/*.md" \
+    "${TUTORIAL_ROOT}/examples/**/*.md"
+elif command -v markdownlint-cli2 >/dev/null 2>&1; then
   log "Linting Markdown"
   markdownlint-cli2 \
     "${TUTORIAL_ROOT}/README.md" \
     "${TUTORIAL_ROOT}/docs/**/*.md" \
     "${TUTORIAL_ROOT}/examples/**/*.md"
 else
-  warn "markdownlint-cli2 is not installed; Markdown lint was skipped. CI runs it on every change."
+  warn "markdownlint-cli2 is not installed; run 'npm ci'. Markdown lint was skipped."
 fi
 
 log "Checking that documented versions match .versions.env"

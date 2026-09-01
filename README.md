@@ -335,7 +335,7 @@ For complete local validation on macOS, install the development tools once:
 
 ```bash
 brew install kubeconform shellcheck node
-npm install --global markdownlint-cli2@0.18.1
+npm ci
 make validate
 ```
 
@@ -364,10 +364,11 @@ Git files remain unchanged, so the environment can be recreated with
 ## Maintenance and validation
 
 GitHub Actions renders and schema-validates every manifest, lints Bash and
-Markdown, checks documentation links, and performs a weekly version check.
-Dependabot updates GitHub Actions. The included `renovate.json5` updates tool
-pins, the Argo CD manifest, and the digest-pinned NGINX image when the Renovate
-app is enabled for the repository.
+Markdown, and checks documentation links. Dependabot groups weekly updates for
+GitHub Actions, npm development dependencies, and container images referenced
+by the Kubernetes manifests. The central tool and Argo CD pins are a tested
+baseline: audit them with `make check-versions` and review updates together as
+described in the [upgrade guide](docs/upgrading.md).
 
 Primary references:
 
