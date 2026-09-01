@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gitops-heartbeat
+  labels:
+    app.kubernetes.io/name: gitops-heartbeat
+    app.kubernetes.io/part-of: argocd-local-tutorial
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: gitops-heartbeat
+            app.kubernetes.io/part-of: argocd-local-tutorial
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+          containers:
+            - name: heartbeat
+              # Multi-platform digest for the official busybox:1.37.0 image.
+              image: busybox:1.37.0@sha256:9db7b59979c38555a39def84a31fb98b5296952f9e3afd4f6f11f05b07adfab0
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - date -u '+Argo CD heartbeat at %Y-%m-%dT%H:%M:%SZ'
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 8Mi
+                limits:
+                  cpu: 50m
+                  memory: 16Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL

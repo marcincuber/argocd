@@ -31,7 +31,12 @@ updates:
 
   # Dependabot supports Docker image tags in Kubernetes manifests.
   - package-ecosystem: docker
-    directory: /examples/hello-app/base
+    directories:
+      - /examples/hello-app/base
+      - /examples/podinfo
+      - /examples/redis
+      - /examples/cronjob
+      - /examples/blue-green
     schedule:
       interval: weekly
       day: monday

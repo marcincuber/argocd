@@ -17,8 +17,9 @@ if ! kubectl get customresourcedefinition/applications.argoproj.io \
 fi
 
 SOURCE_PATH="${1:-bootstrap}"
-[[ "${SOURCE_PATH}" == "bootstrap" || "${SOURCE_PATH}" == "advanced" ]] || \
-  fail "Source must be 'bootstrap' or 'advanced'."
+[[ "${SOURCE_PATH}" == "bootstrap" || "${SOURCE_PATH}" == "advanced" || \
+  "${SOURCE_PATH}" == "catalog" ]] || \
+  fail "Source must be 'bootstrap', 'catalog', or 'advanced'."
 
 log "Resolving the Git repository and revision"
 REPOSITORY="$(resolve_repo_url)"
@@ -29,7 +30,7 @@ TARGET_REVISION="$(resolve_revision)"
 [[ "${TARGET_REVISION}" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]] || fail \
   "REVISION contains unsupported characters. Use a branch, tag, or commit SHA."
 
-if [[ -n "$(git -C "${TUTORIAL_ROOT}" status --porcelain -- examples bootstrap advanced 2>/dev/null)" ]]; then
+if [[ -n "$(git -C "${TUTORIAL_ROOT}" status --porcelain -- examples bootstrap catalog advanced 2>/dev/null)" ]]; then
   warn "There are uncommitted GitOps files. Argo CD can only read committed and pushed content."
 fi
 
@@ -57,7 +58,7 @@ if [[ "${SOURCE_PATH}" == "bootstrap" ]]; then
   kubectl get appproject,application \
     --namespace "${ARGOCD_NAMESPACE}" \
     --request-timeout="${KUBECTL_REQUEST_TIMEOUT}"
-else
+elif [[ "${SOURCE_PATH}" == "advanced" ]]; then
   log "Applying the local ApplicationSet"
   kubectl apply \
     --request-timeout="${KUBECTL_REQUEST_TIMEOUT}" \
@@ -71,6 +72,35 @@ else
     --request-timeout="${KUBECTL_REQUEST_TIMEOUT}"
 
   kubectl get applicationset \
+    --namespace "${ARGOCD_NAMESPACE}" \
+    --request-timeout="${KUBECTL_REQUEST_TIMEOUT}"
+else
+  if ! kubectl get appproject local-tutorial \
+    --namespace "${ARGOCD_NAMESPACE}" \
+    --request-timeout="${KUBECTL_REQUEST_TIMEOUT}" >/dev/null 2>&1; then
+    fail "AppProject 'local-tutorial' does not exist. Run: make bootstrap"
+  fi
+
+  log "Configuring the repository and optional tutorial namespaces"
+  kubectl patch appproject local-tutorial \
+    --namespace "${ARGOCD_NAMESPACE}" \
+    --type merge \
+    --patch "{\"spec\":{\"sourceRepos\":[\"${REPOSITORY}\"],\"destinations\":[{\"namespace\":\"hello-*\",\"server\":\"https://kubernetes.default.svc\"},{\"namespace\":\"tutorial-*\",\"server\":\"https://kubernetes.default.svc\"}]}}" \
+    --request-timeout="${KUBECTL_REQUEST_TIMEOUT}"
+
+  log "Applying the optional example catalog"
+  kubectl apply \
+    --request-timeout="${KUBECTL_REQUEST_TIMEOUT}" \
+    -f "${TUTORIAL_ROOT}/catalog/examples.yaml"
+
+  log "Configuring ${REPOSITORY} at ${TARGET_REVISION}"
+  kubectl patch applicationset tutorial-examples \
+    --namespace "${ARGOCD_NAMESPACE}" \
+    --type merge \
+    --patch "{\"spec\":{\"template\":{\"spec\":{\"source\":{\"repoURL\":\"${REPOSITORY}\",\"targetRevision\":\"${TARGET_REVISION}\"}}}}}" \
+    --request-timeout="${KUBECTL_REQUEST_TIMEOUT}"
+
+  kubectl get applicationset,applications \
     --namespace "${ARGOCD_NAMESPACE}" \
     --request-timeout="${KUBECTL_REQUEST_TIMEOUT}"
 fi

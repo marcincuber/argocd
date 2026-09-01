@@ -21,7 +21,7 @@ export KUBERNETES_VERSION MINIKUBE_VERSION ARGOCD_VERSION KUBECONFORM_VERSION
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor all cluster install bootstrap advanced verify status \
+.PHONY: help doctor all cluster install bootstrap examples advanced verify status \
 	port-forward-argocd port-forward-app render validate check-versions \
 	update-docs upgrade stop start clean
 
@@ -41,6 +41,9 @@ install: ## Install the pinned Argo CD release in the active tutorial cluster.
 
 bootstrap: ## Apply the AppProject and local example using your Git remote.
 	@./scripts/apply-gitops.sh bootstrap
+
+examples: ## Deploy the four optional examples (five applications in total).
+	@./scripts/apply-gitops.sh catalog
 
 advanced: ## Deploy the optional dev/staging ApplicationSet example.
 	@./scripts/apply-gitops.sh advanced

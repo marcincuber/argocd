@@ -27,6 +27,7 @@ resource that has been removed from Git is deleted.
 | --- | --- |
 | `AppProject/local-tutorial` | Restricts permitted repositories, destinations, and resource types |
 | `Application/hello-minikube` | Connects one Git path to one cluster namespace |
+| `ApplicationSet/tutorial-examples` | Optionally generates four workload-pattern Applications |
 | `ApplicationSet/hello-environments` | Optionally generates dev and staging Applications from a list |
 | Kustomize base | Defines reusable Deployment, Service, and content |
 | Kustomize overlay | Changes replica count and environment labels without copying the base |
@@ -58,7 +59,7 @@ The `local-tutorial` AppProject is narrower than Argo CD's unrestricted
 
 - only the configured repository is accepted;
 - only the in-cluster Kubernetes API is accepted;
-- only namespaces matching `hello-*` are accepted;
+- only namespaces matching `hello-*` or `tutorial-*` are accepted;
 - namespace-scoped resources are allowed for the learning exercises; and
 - `Namespace` is the only permitted cluster-scoped kind.
 

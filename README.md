@@ -36,10 +36,13 @@ Kubernetes version in its published compatibility matrix.
 .
 ├── cluster/                    # Pinned Argo CD installer
 ├── bootstrap/                  # Restricted AppProject and main Application
+├── catalog/                    # Four optional Applications generated as a set
 ├── advanced/                   # Optional dev/staging ApplicationSet
 ├── examples/hello-app/
 │   ├── base/                   # Deployment, Service, and generated ConfigMap
 │   └── overlays/               # local, dev, and staging Kustomize overlays
+├── examples/{podinfo,redis,cronjob,blue-green}/
+│                               # Optional workload-pattern examples
 ├── scripts/                    # Safe setup, verification, and maintenance tools
 ├── docs/                       # Concepts and optional learning tracks
 └── Makefile                    # Short user-facing commands
@@ -47,7 +50,7 @@ Kubernetes version in its published compatibility matrix.
 
 The main Application enables automatic sync, pruning, self-healing, namespace
 creation, and retry backoff. Its `AppProject` limits it to this repository and
-namespaces matching `hello-*`.
+namespaces matching `hello-*` or `tutorial-*`.
 
 ## 1. Install prerequisites
 
@@ -199,7 +202,8 @@ The bootstrap command applies the local resources with reconciliation paused,
 sets your detected Git remote and branch, and then enables reconciliation. It
 does not generate or render an intermediate manifest. It creates:
 
-- `local-tutorial`, an AppProject restricted to the repository and `hello-*`;
+- `local-tutorial`, an AppProject restricted to the repository and the tutorial
+  namespaces;
 - `hello-minikube`, an Application watching `overlays/local`; and
 - the `hello-minikube` namespace and application resources through Argo CD.
 
@@ -231,6 +235,20 @@ Visit [http://localhost:8081](http://localhost:8081), or run:
 curl http://localhost:8081
 make status
 ```
+
+## Optional: deploy all five examples
+
+The main application is example one. Deploy four additional Applications with
+one ApplicationSet:
+
+```bash
+make examples
+kubectl get applicationsets,applications --namespace argocd
+```
+
+The catalog adds a health-aware Podinfo microservice, persistent Redis
+StatefulSet, scheduled heartbeat CronJob, and blue/green web deployment. See the
+[example catalog](examples/README.md) for verification exercises and cleanup.
 
 ## 9. GitOps exercises
 
@@ -321,6 +339,7 @@ Argo CD recreates `prune-demo`. This is the auditable GitOps rollback pattern.
 make help                 # List commands and configurable variables
 make status               # Show cluster, controllers, and application
 make verify               # Repeat the complete smoke test
+make examples             # Deploy all five tutorial applications
 make render               # Render every Kustomization locally
 make validate             # Schema-check manifests and lint scripts/docs
 make check-versions       # Compare pins with upstream stable releases
@@ -345,6 +364,7 @@ Delete only the example and wait for its finalizer to prune managed resources
 before deleting the project:
 
 ```bash
+kubectl delete -k catalog --ignore-not-found
 kubectl delete application hello-minikube --namespace argocd
 kubectl wait --for=delete application/hello-minikube \
   --namespace argocd \

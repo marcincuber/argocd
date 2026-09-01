@@ -16,11 +16,16 @@ mkdir -p "${OUTPUT_DIRECTORY}"
 paths=(
   cluster
   bootstrap
+  catalog
   advanced
   examples/hello-app/base
   examples/hello-app/overlays/local
   examples/hello-app/overlays/dev
   examples/hello-app/overlays/staging
+  examples/podinfo
+  examples/redis
+  examples/cronjob
+  examples/blue-green
 )
 
 for path in "${paths[@]}"; do
