@@ -22,12 +22,12 @@ CONFIRM_UPGRADE=true make upgrade
 ## Change the pin manually
 
 1. Update `ARGOCD_VERSION` in `.versions.env`.
-2. Update the version in `cluster/kustomization.yaml`.
-3. Update the tested-version table in `README.md`.
-4. Read the release notes and relevant upgrade guide.
-5. Render and validate before touching the cluster.
+2. Run `make update-docs` to synchronize the installer and documentation.
+3. Read the release notes and relevant upgrade guide.
+4. Render and validate before touching the cluster.
 
 ```bash
+make update-docs
 make render
 make validate
 make upgrade

@@ -48,12 +48,7 @@ else
   warn "markdownlint-cli2 is not installed; run 'npm ci'. Markdown lint was skipped."
 fi
 
-log "Checking that documented versions match .versions.env"
-for version in "${KUBERNETES_VERSION}" "${MINIKUBE_VERSION}" "${ARGOCD_VERSION}" "${KUBECONFORM_VERSION}"; do
-  grep -Fq "${version}" "${TUTORIAL_ROOT}/README.md" || fail "README.md does not mention pinned version ${version}."
-done
-grep -Fq "argo-cd/${ARGOCD_VERSION}/manifests/install.yaml" \
-  "${TUTORIAL_ROOT}/cluster/kustomization.yaml" || fail \
-  "cluster/kustomization.yaml does not use ARGOCD_VERSION=${ARGOCD_VERSION}."
+log "Checking that documentation and manifests match .versions.env"
+"${TUTORIAL_ROOT}/scripts/update-docs.sh" --check
 
 printf '\nAll local validation checks passed.\n'

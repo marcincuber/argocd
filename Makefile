@@ -22,8 +22,8 @@ export KUBERNETES_VERSION MINIKUBE_VERSION ARGOCD_VERSION KUBECONFORM_VERSION
 .DEFAULT_GOAL := help
 
 .PHONY: help doctor all cluster install bootstrap advanced verify status \
-	port-forward-argocd port-forward-app render validate check-versions upgrade \
-	stop start clean
+	port-forward-argocd port-forward-app render validate check-versions \
+	update-docs upgrade stop start clean
 
 help: ## Show the available commands.
 	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target> [VARIABLE=value]\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -65,6 +65,9 @@ validate: ## Render, schema-check, lint scripts, and check documented versions.
 
 check-versions: ## Compare the pinned tools with current upstream releases.
 	@./scripts/check-versions.sh
+
+update-docs: ## Synchronize documentation and manifests with .versions.env.
+	@./scripts/update-docs.sh
 
 upgrade: ## Diff, apply, and verify the pinned Argo CD installation.
 	@./scripts/upgrade.sh

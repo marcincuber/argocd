@@ -28,13 +28,13 @@ curl -fsSLO https://github.com/kubernetes/minikube/releases/latest/download/mini
 sudo install -m 0755 minikube-linux-amd64 /usr/local/bin/minikube
 rm minikube-linux-amd64
 
-curl -fsSLO https://dl.k8s.io/release/v1.36.3/bin/linux/amd64/kubectl
-curl -fsSLO https://dl.k8s.io/release/v1.36.3/bin/linux/amd64/kubectl.sha256
+curl -fsSLO https://dl.k8s.io/release/v1.37.0/bin/linux/amd64/kubectl
+curl -fsSLO https://dl.k8s.io/release/v1.37.0/bin/linux/amd64/kubectl.sha256
 echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 sudo install -m 0755 kubectl /usr/local/bin/kubectl
 rm kubectl kubectl.sha256
 
-curl -fsSLO https://github.com/argoproj/argo-cd/releases/download/v3.5.0/argocd-linux-amd64
+curl -fsSLO https://github.com/argoproj/argo-cd/releases/download/v3.5.2/argocd-linux-amd64
 sudo install -m 0755 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 ```
@@ -60,7 +60,7 @@ winget install --exact --id Docker.DockerDesktop
 Install the pinned Argo CD CLI:
 
 ```powershell
-$version = "v3.5.0"
+$version = "v3.5.2"
 $url = "https://github.com/argoproj/argo-cd/releases/download/$version/argocd-windows-amd64.exe"
 New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\argocd" | Out-Null
 Invoke-WebRequest -Uri $url -OutFile "$env:LOCALAPPDATA\argocd\argocd.exe"

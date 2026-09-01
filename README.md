@@ -17,19 +17,18 @@ cloud account, DNS name, or ingress controller is required.
 
 ## Tested version baseline
 
-The central pins live in [`.versions.env`](.versions.env). They were checked on
-4 August 2026.
+The central pins live in [`.versions.env`](.versions.env). After changing them,
+run `make update-docs` to synchronize the examples below.
 
 | Component | Tested version | Purpose |
 | --- | --- | --- |
-| Kubernetes | `v1.36.3` | Local cluster API and workloads |
+| Kubernetes | `v1.37.0` | Local cluster API and workloads |
 | Minikube | `v1.38.1` | Local cluster lifecycle |
-| Argo CD | `v3.5.0` | GitOps controller, API, CLI, and UI |
+| Argo CD | `v3.5.2` | GitOps controller, API, CLI, and UI |
 | Kubeconform | `v0.8.0` | Optional local and CI schema validation |
 
-Argo CD `3.5` is officially tested with Kubernetes `1.33` through `1.36`, so the
-latest versions used by this tutorial are within the published compatibility
-matrix.
+Before changing the baseline, confirm that Argo CD supports the selected
+Kubernetes version in its published compatibility matrix.
 
 ## What the repository contains
 
@@ -131,14 +130,14 @@ minikube start \
   --container-runtime containerd \
   --cpus 4 \
   --memory 6144 \
-  --kubernetes-version v1.36.3
+  --kubernetes-version v1.37.0
 ```
 
 Expected checkpoint:
 
 ```text
 NAME     STATUS   ROLES           VERSION
-argocd   Ready    control-plane   v1.36.3
+argocd   Ready    control-plane   v1.37.0
 ```
 
 All scripts refuse to modify Kubernetes if the active context is not the
@@ -325,6 +324,7 @@ make verify               # Repeat the complete smoke test
 make render               # Render every Kustomization locally
 make validate             # Schema-check manifests and lint scripts/docs
 make check-versions       # Compare pins with upstream stable releases
+make update-docs          # Synchronize docs/manifests with version pins
 make stop                 # Preserve but stop the cluster
 make start                # Restart the same profile
 make upgrade              # Preview and apply a pinned Argo CD upgrade
@@ -368,7 +368,8 @@ Markdown, and checks documentation links. Dependabot groups weekly updates for
 GitHub Actions, npm development dependencies, and container images referenced
 by the Kubernetes manifests. The central tool and Argo CD pins are a tested
 baseline: audit them with `make check-versions` and review updates together as
-described in the [upgrade guide](docs/upgrading.md).
+described in the [upgrade guide](docs/upgrading.md). After changing a pin, run
+`make update-docs` to synchronize every version-dependent example.
 
 Primary references:
 
