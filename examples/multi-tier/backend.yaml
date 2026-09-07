@@ -24,7 +24,7 @@ spec:
         runAsGroup: 10000
       containers:
         - name: podinfo
-          image: ghcr.io/stefanprodan/podinfo:6.9.4@sha256:b1e974022d6603c8ceea4a05c6ff9d9f4e6bf6a6590fb740251811283458c4ea
+          image: ghcr.io/stefanprodan/podinfo:6.15.0@sha256:ec73780a8425f59ea49f5bc8cdff0d598805a224fbaa1f86c67a244f250fa9da
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
